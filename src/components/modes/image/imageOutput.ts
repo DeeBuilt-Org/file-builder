@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import { downloadBlob } from "@/lib/download";
+import { saveBlob, type SaveResult } from "@/lib/download";
 
 /**
  * Deliver a batch of processed images: one file downloads directly; several get
@@ -14,11 +14,14 @@ export interface OutputFile {
   blob: Blob;
 }
 
-export async function deliverImages(files: OutputFile[], zipName: string): Promise<void> {
-  if (files.length === 0) return;
+export async function deliverImages(
+  files: OutputFile[],
+  zipName: string,
+  opts: { usePicker?: boolean } = {},
+): Promise<SaveResult> {
+  if (files.length === 0) return { status: "cancelled" };
   if (files.length === 1) {
-    downloadBlob(files[0].blob, files[0].name);
-    return;
+    return saveBlob(files[0].blob, files[0].name, { usePicker: opts.usePicker, pickerId: "fb-image" });
   }
   const zip = new JSZip();
   const used = new Set<string>();
@@ -38,5 +41,5 @@ export async function deliverImages(files: OutputFile[], zipName: string): Promi
   }
   const blob = await zip.generateAsync({ type: "blob" });
   const safe = zipName.trim().replace(/\.zip$/i, "") || "images";
-  downloadBlob(blob, `${safe}.zip`);
+  return saveBlob(blob, `${safe}.zip`, { usePicker: opts.usePicker, pickerId: "fb-image-zip" });
 }

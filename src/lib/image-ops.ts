@@ -130,6 +130,133 @@ export function fitDimensions(
 }
 
 /**
+ * How an image is made to fill an EXACT target box when its aspect ratio doesn't
+ * match. `fitDimensions` above can't do this — it always yields the largest size
+ * that fits INSIDE the box, so one side comes up short (ask for 640×400 from a
+ * 4:3 source and you get 533×400). Exact output means something has to give:
+ *
+ *  - `crop`    scale to COVER the box, then trim the overflow. Every output pixel
+ *              is real image; the edges of the long axis are lost. What you want
+ *              for a fixed-dimension submission (store listings, ad slots).
+ *  - `pad`     scale to fit INSIDE the box, then fill the remainder with a
+ *              background color. Nothing is lost; you get bars.
+ *  - `stretch` distort to the box. Honest option, ugly result — never a default.
+ */
+export type FillMode = "crop" | "pad" | "stretch";
+
+/**
+ * Where the image sits inside the target box, as a 0–1 fraction on each axis.
+ * 0 = flush to the left/top edge, 0.5 = centered, 1 = flush to the right/bottom.
+ *
+ * For `crop` this chooses which part of the overflow survives (focus point); for
+ * `pad` it chooses where the image sits among the bars. The axis that isn't
+ * overflowing (or padding) ignores its value — there's nothing to move.
+ */
+export interface FillFocus {
+  x: number;
+  y: number;
+}
+
+export const CENTER_FOCUS: FillFocus = { x: 0.5, y: 0.5 };
+
+const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
+
+/**
+ * The geometry of drawing `natW × natH` into an exact `targetW × targetH` box.
+ * Returns the destination rect in target-space: for `crop` it's LARGER than the
+ * box and offset negatively (the overflow is clipped by the canvas edge); for
+ * `pad` it's smaller and inset. Pure math, no canvas — so the UI can draw the
+ * same preview the encoder will produce, and the two can never disagree.
+ */
+export function exactPlacement(
+  natW: number,
+  natH: number,
+  targetW: number,
+  targetH: number,
+  fill: FillMode,
+  focus: FillFocus = CENTER_FOCUS,
+): { dx: number; dy: number; dw: number; dh: number; overflowX: number; overflowY: number } {
+  if (fill === "stretch") {
+    return { dx: 0, dy: 0, dw: targetW, dh: targetH, overflowX: 0, overflowY: 0 };
+  }
+  const scaleX = targetW / natW;
+  const scaleY = targetH / natH;
+  // COVER takes the larger scale (fill the box, spill over); CONTAIN the smaller.
+  const scale = fill === "crop" ? Math.max(scaleX, scaleY) : Math.min(scaleX, scaleY);
+  const dw = natW * scale;
+  const dh = natH * scale;
+  // Slack is negative for crop (overflow to hide) and positive for pad (bars to
+  // distribute). The focus fraction splits it between the two sides either way.
+  const slackX = targetW - dw;
+  const slackY = targetH - dh;
+  return {
+    dx: slackX * clamp01(focus.x),
+    dy: slackY * clamp01(focus.y),
+    dw,
+    dh,
+    overflowX: Math.max(0, -slackX),
+    overflowY: Math.max(0, -slackY),
+  };
+}
+
+/**
+ * Render an image at an EXACT pixel size. Unlike `resizeImage`, the output is
+ * always precisely `width × height` — the aspect mismatch is absorbed by the
+ * chosen `fill` mode rather than by shrinking a side.
+ *
+ * `background` paints under the image (used by `pad`, and forced opaque for JPEG
+ * which has no alpha). Pass "transparent" with a PNG/WebP target for clear bars.
+ */
+export async function renderExactSize(
+  file: Blob,
+  opts: {
+    width: number;
+    height: number;
+    fill: FillMode;
+    focus?: FillFocus;
+    background?: string;
+    to?: RasterType;
+    quality?: number;
+  },
+): Promise<{ blob: Blob; width: number; height: number }> {
+  const img = await loadImage(file);
+  const width = Math.max(1, Math.round(opts.width));
+  const height = Math.max(1, Math.round(opts.height));
+  const mime = opts.to ?? guessMime(file);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Your browser blocked the image canvas.");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  // JPEG can't store alpha, so a transparent request would encode as black —
+  // fall back to white there rather than producing a surprise.
+  const bg = opts.background ?? "transparent";
+  const paint = mime === "image/jpeg" && (bg === "transparent" || bg === "none") ? "#ffffff" : bg;
+  if (paint !== "transparent" && paint !== "none") {
+    ctx.fillStyle = paint;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  const { dx, dy, dw, dh } = exactPlacement(
+    img.width,
+    img.height,
+    width,
+    height,
+    opts.fill,
+    opts.focus ?? CENTER_FOCUS,
+  );
+  ctx.drawImage(img.el, dx, dy, dw, dh);
+
+  const fmt = formatFor(mime);
+  const blob = await canvasToBlob(canvas, mime, fmt.lossy ? opts.quality : undefined);
+  return { blob, width, height };
+}
+
+/**
  * Resize an image to fit within max width/height (aspect preserved), re-encoding
  * to the same format family it came in as (or an explicit `to`). Returns the new
  * Blob plus its final dimensions.
