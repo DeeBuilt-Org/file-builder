@@ -83,17 +83,29 @@
   cursor: move;
   display: flex;
   align-items: center;
-  border: 1px dashed transparent;
+  /* An outline, not a border: it takes no layout space, so the box's contents
+     sit at exactly the stored x/y. The exporter draws from those same numbers. */
+  outline: 1px dashed transparent;
+  outline-offset: -1px;
   touch-action: none;
 }
 
 .fb-ob:hover {
-  border-color: rgba(124, 58, 237, 0.4);
+  outline-color: rgba(124, 58, 237, 0.4);
 }
 
 .fb-ob[data-selected="true"] {
-  border: 1px solid #7c3aed;
+  outline: 1px solid #7c3aed;
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25);
+}
+
+/* Checkmark / circle: an SVG covering the whole box. */
+.fb-ob-mark {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
 }
 
 .fb-ob-text {
@@ -126,10 +138,19 @@
   pointer-events: none;
 }
 
-.fb-ob-del {
+/* Duplicate + Remove, floating just above the selected box so they never cover
+   a small mark. */
+.fb-ob-actions {
   position: absolute;
-  top: -12px;
-  right: -12px;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+
+.fb-ob-act {
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -140,8 +161,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   cursor: pointer;
-  z-index: 2;
+}
+
+/* Marks can be only a few points wide; hang the resize handle further out so it
+   doesn't sit on top of the mark. */
+.fb-ob[data-kind="checkmark"] .fb-ob-resize,
+.fb-ob[data-kind="circle"] .fb-ob-resize {
+  right: -13px;
+  bottom: -13px;
 }
 
 .fb-ob-resize {
@@ -190,6 +219,21 @@
 
 .fb-sf-tool :first-child {
   font-size: 20px;
+}
+
+.fb-sf-defaults-field {
+  margin-top: 14px;
+  align-items: flex-start;
+}
+
+.fb-sf-defaults {
+  display: grid;
+  width: 100%;
+  gap: 6px;
+}
+
+.fb-sf-defaults .ant-input-number-group-wrapper {
+  width: 100%;
 }
 
 .fb-sf-textopts {

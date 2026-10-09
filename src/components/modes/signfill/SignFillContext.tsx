@@ -14,12 +14,19 @@ import {
   getPageTextItems,
   type PageTextItem,
 } from "@/lib/pdfjs";
+import {
+  FALLBACK_SIZE_DEFAULTS,
+  circleBox,
+  suggestSizeDefaults,
+  textBoxHeight,
+  type SizeDefaults,
+} from "./sizing";
 
 /**
  * SignFillContext — state for the Sign & Fill mode: one loaded PDF, its rendered
  * page images, and the overlay elements the user places on top (text, signature
- * image, date, checkmark, white-out box). On download, `applyOverlay` flattens
- * every element into the real PDF bytes.
+ * image, date, checkmark, circle, white-out box). On download, `applyOverlay`
+ * flattens every element into the real PDF bytes.
  *
  * Coordinates: every element stores its position/size in PDF POINTS relative to
  * the page's top-left (unscaled). The canvas renders pages at a display scale
@@ -27,7 +34,10 @@ import {
  * points means zoom/scale never corrupts placement.
  */
 
-export type ElementKind = "text" | "signature" | "checkmark";
+export type ElementKind = "text" | "signature" | "checkmark" | "circle";
+
+/** Gap, in points, between an element and the copy `duplicateElement` makes. */
+const DUPLICATE_GAP = 4;
 
 export interface OverlayElement {
   id: string;
@@ -38,7 +48,7 @@ export interface OverlayElement {
   y: number;
   width: number;
   height: number;
-  // text / checkmark
+  // text
   text?: string;
   fontSize?: number;
   color?: { r: number; g: number; b: number };
@@ -109,6 +119,13 @@ interface SignFillState {
   ) => string;
   updateElement: (id: string, patch: Partial<OverlayElement>) => void;
   removeElement: (id: string) => void;
+  /** Copy an element right next to the original and select the copy. */
+  duplicateElement: (id: string) => string;
+  /** The sizes every new element starts at; seeded from the PDF's own type size. */
+  defaults: SizeDefaults;
+  setDefaults: (patch: Partial<SizeDefaults>) => void;
+  /** Resize everything already placed to the current defaults. */
+  applyDefaultsToAll: () => void;
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
   /** "Fix existing text" mode: existing PDF text runs become clickable. */
@@ -130,6 +147,7 @@ export function SignFillProvider({ children }: { children: ReactNode }) {
   const [elements, setElements] = useState<OverlayElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fixMode, setFixMode] = useState(false);
+  const [defaults, setDefaultsState] = useState<SizeDefaults>(FALLBACK_SIZE_DEFAULTS);
   const urls = useRef<string[]>([]);
 
   const revokeAll = () => {
@@ -166,6 +184,7 @@ export function SignFillProvider({ children }: { children: ReactNode }) {
       setPages(rendered);
       setElements([]);
       setSelectedId(null);
+      setDefaultsState(suggestSizeDefaults(rendered));
       return true;
     } catch {
       return false;
@@ -181,6 +200,7 @@ export function SignFillProvider({ children }: { children: ReactNode }) {
     setPages([]);
     setElements([]);
     setSelectedId(null);
+    setDefaultsState(FALLBACK_SIZE_DEFAULTS);
   }, []);
 
   const addElement = useCallback((el: Omit<OverlayElement, "id">) => {
@@ -248,6 +268,59 @@ export function SignFillProvider({ children }: { children: ReactNode }) {
     setSelectedId((cur) => (cur === id ? null : cur));
   }, []);
 
+  /**
+   * Duplicate: an exact copy placed immediately to the right of the original
+   * (or just below it when there's no room left on the page), then selected so
+   * it can be dragged straight away. A copy of a click-to-match box does not
+   * inherit `replacesOriginal`; only the first box stands in for the PDF's text.
+   */
+  const duplicateElement = useCallback(
+    (id: string) => {
+      const newId = uuid();
+      setElements((prev) => {
+        const src = prev.find((e) => e.id === id);
+        if (!src) return prev;
+        const pg = pages.find((p) => p.pageIndex === src.pageIndex);
+        const fitsRight = !pg || src.x + src.width * 2 + DUPLICATE_GAP <= pg.width;
+        const copy: OverlayElement = {
+          ...src,
+          id: newId,
+          replacesOriginal: undefined,
+          x: fitsRight ? src.x + src.width + DUPLICATE_GAP : src.x,
+          y: fitsRight ? src.y : src.y + src.height + DUPLICATE_GAP,
+        };
+        return [...prev, copy];
+      });
+      setSelectedId(newId);
+      return newId;
+    },
+    [pages],
+  );
+
+  const setDefaults = useCallback((patch: Partial<SizeDefaults>) => {
+    setDefaultsState((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const applyDefaultsToAll = useCallback(() => {
+    setElements((prev) =>
+      prev.map((e) => {
+        // Click-to-match boxes keep the size of the text they replaced.
+        if (e.kind === "text" && !e.replacesOriginal) {
+          return { ...e, fontSize: defaults.textSize, height: textBoxHeight(defaults.textSize) };
+        }
+        if (e.kind === "checkmark") {
+          return { ...e, width: defaults.markSize, height: defaults.markSize };
+        }
+        if (e.kind === "circle") {
+          // Keep the oval's proportions; only its overall size follows the default.
+          const height = circleBox(defaults.markSize).height;
+          return { ...e, width: e.width * (height / e.height), height };
+        }
+        return e;
+      }),
+    );
+  }, [defaults]);
+
   const value = useMemo<SignFillState>(
     () => ({
       fileName,
@@ -262,6 +335,10 @@ export function SignFillProvider({ children }: { children: ReactNode }) {
       matchTextItem,
       updateElement,
       removeElement,
+      duplicateElement,
+      defaults,
+      setDefaults,
+      applyDefaultsToAll,
       selectedId,
       setSelectedId,
       fixMode,
@@ -279,6 +356,10 @@ export function SignFillProvider({ children }: { children: ReactNode }) {
       matchTextItem,
       updateElement,
       removeElement,
+      duplicateElement,
+      defaults,
+      setDefaults,
+      applyDefaultsToAll,
       selectedId,
       fixMode,
     ],

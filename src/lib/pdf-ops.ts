@@ -6,6 +6,7 @@ import {
   type PDFFont,
   type Color,
 } from "pdf-lib";
+import { CHECK_PATH, CIRCLE_STROKE_PT, checkSquare, circleRadii } from "./marks";
 
 /**
  * pdf-ops.ts — the WRITE side of File Builder's PDF editing. Every structural
@@ -106,6 +107,12 @@ export interface TextStamp {
   /** Top-left y of the text box, in PDF points (measured from the page top). */
   y: number;
   size: number;
+  /**
+   * Distance from the box top down to the text baseline, in points. The caller
+   * measures this from the on-screen layout so the exported line sits where the
+   * preview showed it. Defaults to 0.8 x size (text hugging the box top).
+   */
+  baseline?: number;
   color?: { r: number; g: number; b: number }; // 0..1
   font?: "Helvetica" | "Helvetica-Bold" | "Times-Roman" | "Courier";
   /**
@@ -129,8 +136,24 @@ export interface ImageStamp {
   height: number;
 }
 
-/** A vector checkmark drawn within a box (no font glyph needed). */
+/**
+ * A vector checkmark drawn within a box (no font glyph needed). The shape comes
+ * from `marks.ts`, the same outline the on-screen overlay draws; it is scaled
+ * uniformly and centered in the box, never stretched.
+ */
 export interface CheckStamp {
+  pageIndex: number;
+  /** Top-left x, in PDF points. */
+  x: number;
+  /** Top-left y, in PDF points (from page top). */
+  y: number;
+  width: number;
+  height: number;
+  color?: { r: number; g: number; b: number };
+}
+
+/** An outlined oval filling a box, for circling an option on a form. */
+export interface CircleStamp {
   pageIndex: number;
   /** Top-left x, in PDF points. */
   x: number;
@@ -178,6 +201,7 @@ export async function applyOverlay(
     images?: ImageStamp[];
     texts?: TextStamp[];
     checks?: CheckStamp[];
+    circles?: CircleStamp[];
   },
 ): Promise<PdfBytes> {
   const doc = await loadPdf(data);
@@ -234,26 +258,39 @@ export async function applyOverlay(
     });
   }
 
-  // Checkmarks: drawn as a two-segment vector tick (no font glyph for it exists
-  // in the standard Latin set, so we draw it rather than type it).
+  // Checkmarks: the shared filled outline from marks.ts (no font glyph for a
+  // check exists in the standard Latin set, so we draw it rather than type it).
+  // Scaled uniformly and centered in the box, exactly as the overlay shows it.
   for (const c of overlay.checks ?? []) {
     const page = pages[c.pageIndex];
     const p = place(c.pageIndex, c);
     if (!page || !p) continue;
-    const col = toColor(c.color ?? { r: 0, g: 0.4, b: 0.1 });
-    const w = p.width;
-    const h = p.height;
-    const thickness = Math.max(1.5, Math.min(w, h) * 0.12);
-    // Points of a check within the box (origin bottom-left in page space): start
-    // at left-mid, down to the low elbow, up to the top-right.
-    const x0 = p.x + w * 0.18;
-    const y0 = p.y + h * 0.5;
-    const x1 = p.x + w * 0.42;
-    const y1 = p.y + h * 0.22;
-    const x2 = p.x + w * 0.85;
-    const y2 = p.y + h * 0.78;
-    page.drawLine({ start: { x: x0, y: y0 }, end: { x: x1, y: y1 }, thickness, color: col });
-    page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color: col });
+    const sq = checkSquare(p.width, p.height);
+    // drawSvgPath takes the path's top-left origin, with the path's y running
+    // down the page from there.
+    page.drawSvgPath(CHECK_PATH, {
+      x: p.x + sq.offsetX,
+      y: p.y + p.height - sq.offsetY,
+      scale: sq.scale,
+      color: toColor(c.color ?? { r: 0, g: 0.4, b: 0.1 }),
+      borderWidth: 0,
+    });
+  }
+
+  // Circles: an outlined oval filling the box, stroke kept inside its edges.
+  for (const c of overlay.circles ?? []) {
+    const page = pages[c.pageIndex];
+    const p = place(c.pageIndex, c);
+    if (!page || !p) continue;
+    const { rx, ry } = circleRadii(p.width, p.height, CIRCLE_STROKE_PT);
+    page.drawEllipse({
+      x: p.x + p.width / 2,
+      y: p.y + p.height / 2,
+      xScale: rx,
+      yScale: ry,
+      borderColor: toColor(c.color ?? { r: 0, g: 0.4, b: 0.1 }),
+      borderWidth: CIRCLE_STROKE_PT,
+    });
   }
 
   // Images (signatures, stamps) next.
@@ -316,7 +353,10 @@ export async function applyOverlay(
     // bottom. Treat the box height as one line of `size`, with the baseline
     // ~0.8em down from the top — good enough for a single stamped line.
     const ascent = t.size * 0.8;
-    const p = place(t.pageIndex, { x: t.x, y: t.y, width: 0, height: t.size });
+    // When the caller measured the real on-screen baseline, shift the line's
+    // top so the 0.8em rule below lands the text exactly on it.
+    const lineTop = t.y + ((t.baseline ?? ascent) - ascent);
+    const p = place(t.pageIndex, { x: t.x, y: lineTop, width: 0, height: t.size });
     if (!p) continue;
     // For upright pages we want the baseline at (top - ascent). place() returned
     // the box bottom in page space for a height of `size`; add (size - ascent).

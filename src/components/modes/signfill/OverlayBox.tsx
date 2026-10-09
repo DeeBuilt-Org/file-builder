@@ -1,15 +1,17 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { CloseOutlined } from "@ant-design/icons";
+import { CloseOutlined, CopyOutlined } from "@ant-design/icons";
 import { useSignFill, type OverlayElement } from "./SignFillContext";
 import { getFontOption, loadFontForPreview } from "@/lib/pdf-fonts";
+import { MarkSvg } from "./MarkSvg";
+import { MARK_SIZE_MIN, TEXT_SIZE_MIN, fontSizeForBoxHeight, textBoxHeight } from "./sizing";
 
 /**
- * OverlayBox — one placed element (text / signature image / white-out / check)
- * floating over a rendered page. Handles drag-to-move and corner-resize in
- * DISPLAY pixels, converting to/from PDF points via `scale` so the stored model
- * stays resolution-independent. It's plain DOM on top of the page image — the
- * exact "HTML overlay layer" the plan describes; `applyOverlay` bakes it into
- * the PDF on save.
+ * OverlayBox — one placed element (text / signature image / white-out / check /
+ * circle) floating over a rendered page. Handles drag-to-move and corner-resize
+ * in DISPLAY pixels, converting to/from PDF points via `scale` so the stored
+ * model stays resolution-independent. It's plain DOM on top of the page image —
+ * the exact "HTML overlay layer" the plan describes; `applyOverlay` bakes it
+ * into the PDF on save.
  */
 export function OverlayBox({
   el,
@@ -18,7 +20,8 @@ export function OverlayBox({
   el: OverlayElement;
   scale: number;
 }) {
-  const { updateElement, removeElement, selectedId, setSelectedId } = useSignFill();
+  const { updateElement, removeElement, duplicateElement, selectedId, setSelectedId } =
+    useSignFill();
   const dragState = useRef<{
     mode: "move" | "resize";
     startX: number;
@@ -60,14 +63,24 @@ export function OverlayBox({
     const dy = (e.clientY - ds.startY) / scale;
     if (ds.mode === "move") {
       updateElement(el.id, { x: ds.origX + dx, y: ds.origY + dy });
+    } else if (el.kind === "checkmark") {
+      // A checkmark is never stretched, so its box stays square: the box you
+      // see is exactly the space the mark fills on screen and in the PDF.
+      const side = Math.max(MARK_SIZE_MIN, Math.max(ds.origW + dx, ds.origH + dy));
+      updateElement(el.id, { width: side, height: side });
+    } else if (el.kind === "circle") {
+      updateElement(el.id, {
+        width: Math.max(MARK_SIZE_MIN, ds.origW + dx),
+        height: Math.max(MARK_SIZE_MIN, ds.origH + dy),
+      });
     } else {
       const width = Math.max(16, ds.origW + dx);
-      const height = Math.max(12, ds.origH + dy);
+      const height = Math.max(textBoxHeight(TEXT_SIZE_MIN), ds.origH + dy);
       // For text, keep the font size roughly tied to the box height so resizing
       // scales the type as you'd expect.
       const patch: Partial<OverlayElement> = { width, height };
-      if (el.kind === "text" || el.kind === "checkmark") {
-        patch.fontSize = Math.max(8, Math.round(height * 0.8));
+      if (el.kind === "text") {
+        patch.fontSize = fontSizeForBoxHeight(height);
       }
       updateElement(el.id, patch);
     }
@@ -112,7 +125,18 @@ export function OverlayBox({
         <img className="fb-ob-img" src={el.imgDataUrl} alt="signature" draggable={false} />
       )}
 
-      {(el.kind === "text" || el.kind === "checkmark") && (
+      {(el.kind === "checkmark" || el.kind === "circle") && (
+        <MarkSvg
+          className="fb-ob-mark"
+          kind={el.kind}
+          width={width}
+          height={height}
+          color={colorCss}
+          scale={scale}
+        />
+      )}
+
+      {el.kind === "text" && (
         <span
           className="fb-ob-text"
           style={{
@@ -131,24 +155,36 @@ export function OverlayBox({
             fontWeight: el.fontWeight ?? 400,
           }}
         >
-          {el.text || (el.kind === "checkmark" ? "✔" : "")}
+          {el.text}
         </span>
       )}
 
       {selected && (
         <>
-          <button
-            type="button"
-            className="fb-ob-del"
-            title="Remove"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              removeElement(el.id);
-            }}
-          >
-            <CloseOutlined />
-          </button>
+          <div className="fb-ob-actions" onPointerDown={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="fb-ob-act"
+              title="Duplicate (Ctrl+D)"
+              onClick={(e) => {
+                e.stopPropagation();
+                duplicateElement(el.id);
+              }}
+            >
+              <CopyOutlined />
+            </button>
+            <button
+              type="button"
+              className="fb-ob-act"
+              title="Remove"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeElement(el.id);
+              }}
+            >
+              <CloseOutlined />
+            </button>
+          </div>
           <span
             className="fb-ob-resize"
             onPointerDown={(e) => onPointerDown(e, "resize")}

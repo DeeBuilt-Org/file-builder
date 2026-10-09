@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Divider,
@@ -31,6 +31,7 @@ import {
   type ImageStamp,
   type RectStamp,
   type CheckStamp,
+  type CircleStamp,
 } from "@/lib/pdf-ops";
 import { downloadBlob } from "@/lib/download";
 import {
@@ -43,6 +44,18 @@ import {
 import { useSignFill, RENDER_SCALE, type ElementKind } from "./SignFillContext";
 import { OverlayBox } from "./OverlayBox";
 import { SignaturePad } from "./SignaturePad";
+import { MarkSvg } from "./MarkSvg";
+import { DefaultSizes } from "./DefaultSizes";
+import { ElementActions } from "./ElementActions";
+import {
+  MARK_SIZE_MAX,
+  MARK_SIZE_MIN,
+  TEXT_SIZE_MAX,
+  TEXT_SIZE_MIN,
+  circleBox,
+  textBaselineFromBoxTop,
+  textBoxHeight,
+} from "./sizing";
 import "./signfill.css";
 
 const SIGNFILL_ACCENT = "#7c3aed";
@@ -63,8 +76,38 @@ function todayStr() {
 /* ------------------------------------------------------------------ Canvas */
 
 export function SignFillCanvas({ isDark }: ModeSurfaceProps) {
-  const { hasDoc, pages, loading, loadPdf, elements, setSelectedId, fixMode, matchTextItem } =
-    useSignFill();
+  const {
+    hasDoc,
+    pages,
+    loading,
+    loadPdf,
+    elements,
+    selectedId,
+    setSelectedId,
+    duplicateElement,
+    fixMode,
+    matchTextItem,
+  } = useSignFill();
+
+  // Ctrl/Cmd+D duplicates the selected element. Ignored while typing in a field
+  // so it never fires mid-edit.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "d") return;
+      const t = e.target;
+      if (
+        t instanceof HTMLElement &&
+        (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      duplicateElement(selectedId);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedId, duplicateElement]);
 
   const onFiles = async (files: File[]) => {
     const ok = await loadPdf(files[0]);
@@ -171,7 +214,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
     elements,
     addElement,
     updateElement,
-    removeElement,
+    defaults,
     selectedId,
     reset,
     fixMode,
@@ -201,14 +244,19 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
     });
   };
 
+  // Every new element starts at the document's default sizes (see DefaultSizes),
+  // so nothing has to be resized down after it's placed.
   const addText = () =>
-    place("text", { text: "Type here", fontSize: 18, color: { r: 0, g: 0, b: 0 }, fontFamily: "Inter", fontWeight: 400, width: 160, height: 26 });
+    place("text", { text: "Type here", fontSize: defaults.textSize, color: { r: 0, g: 0, b: 0 }, fontFamily: "Inter", fontWeight: 400, width: 160, height: textBoxHeight(defaults.textSize) });
 
   const addDate = () =>
-    place("text", { text: todayStr(), fontSize: 16, color: { r: 0, g: 0, b: 0 }, fontFamily: "Inter", fontWeight: 400, width: 140, height: 22 });
+    place("text", { text: todayStr(), fontSize: defaults.textSize, color: { r: 0, g: 0, b: 0 }, fontFamily: "Inter", fontWeight: 400, width: 140, height: textBoxHeight(defaults.textSize) });
 
   const addCheck = () =>
-    place("checkmark", { text: "✔", fontSize: 20, color: { r: 0, g: 0.4, b: 0.1 }, width: 28, height: 28 });
+    place("checkmark", { color: { r: 0, g: 0.4, b: 0.1 }, width: defaults.markSize, height: defaults.markSize });
+
+  const addCircle = () =>
+    place("circle", { color: { r: 0, g: 0.4, b: 0.1 }, ...circleBox(defaults.markSize) });
 
   // "Cover & fix" is just a text box that starts with a white background, so it
   // hides whatever's underneath while you type the correction on top — the way
@@ -216,13 +264,13 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
   const addCover = () =>
     place("text", {
       text: "",
-      fontSize: 14,
+      fontSize: defaults.textSize,
       color: { r: 0, g: 0, b: 0 },
       fontFamily: "Inter",
       fontWeight: 400,
       bg: { r: 1, g: 1, b: 1 },
       width: 140,
-      height: 22,
+      height: textBoxHeight(defaults.textSize),
     });
 
   const onSignatureImage = (dataUrl: string, format: "png" | "jpg") => {
@@ -268,6 +316,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
       const images: ImageStamp[] = [];
       const rects: RectStamp[] = [];
       const checks: CheckStamp[] = [];
+      const circles: CircleStamp[] = [];
       for (const el of elements) {
         if (el.kind === "signature" && el.imgDataUrl) {
           const b = await (await fetch(el.imgDataUrl)).arrayBuffer();
@@ -280,9 +329,9 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
             width: el.width,
             height: el.height,
           });
-        } else if (el.kind === "checkmark") {
-          // Drawn as a vector tick (no Latin glyph for a checkmark to embed).
-          checks.push({
+        } else if (el.kind === "checkmark" || el.kind === "circle") {
+          // Drawn as vectors from the same shapes the overlay shows (marks.ts).
+          (el.kind === "checkmark" ? checks : circles).push({
             pageIndex: el.pageIndex,
             x: el.x,
             y: el.y,
@@ -304,12 +353,23 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
             });
           }
           if (el.text) {
+            const size = el.fontSize ?? 16;
             const stamp: TextStamp = {
               pageIndex: el.pageIndex,
               text: el.text,
               x: el.x,
               y: el.y,
-              size: el.fontSize ?? 16,
+              size,
+              // The overlay centers the line in its box; measure where that puts
+              // the baseline so the PDF text lands on the same line.
+              baseline: textBaselineFromBoxTop({
+                boxHeight: el.height,
+                fontSize: size,
+                fontCss: el.fontFamily
+                  ? getFontOption(el.fontFamily).css
+                  : "Helvetica, Arial, sans-serif",
+                fontWeight: el.fontWeight ?? 400,
+              }),
               color: el.color,
             };
             // Embed the chosen library font's real bytes so the PDF matches the
@@ -326,7 +386,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
           }
         }
       }
-      const out = await applyOverlay(bytes, { rects, images, texts, checks });
+      const out = await applyOverlay(bytes, { rects, images, texts, checks, circles });
       const base = (fileName ?? "document").replace(/\.pdf$/i, "");
       downloadBlob(new Blob([out.slice()], { type: "application/pdf" }), `${base}-signed.pdf`);
       message.success("PDF ready");
@@ -395,6 +455,10 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
               <CheckOutlined />
               <span>Check</span>
             </button>
+            <button type="button" className="fb-sf-tool" onClick={addCircle}>
+              <MarkSvg kind="circle" width={26} height={20} color="currentColor" scale={1.3} />
+              <span>Circle</span>
+            </button>
             <button type="button" className="fb-sf-tool" onClick={addCover}>
               <HighlightOutlined />
               <span>Cover &amp; fix</span>
@@ -415,8 +479,10 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
             }}
           />
 
+          <DefaultSizes />
+
           {/* Selected-element editor */}
-          {selected && (selected.kind === "text" || selected.kind === "checkmark") && (
+          {selected && selected.kind === "text" && (
             <>
               <Divider style={{ margin: "16px 0" }} />
               <div className="fb-field">
@@ -428,46 +494,44 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
                   placeholder="Type…"
                 />
               </div>
-              {selected.kind === "text" && (
-                <div className="fb-field">
-                  <label className="fb-field-label">Font</label>
-                  <Select
-                    showSearch
-                    value={selected.fontFamily ?? "Inter"}
-                    onChange={(v) => {
-                      const opt = getFontOption(v);
-                      loadFontForPreview(v);
-                      updateElement(selected.id, { fontFamily: v, fontWeight: opt.weight });
-                    }}
-                    optionFilterProp="label"
-                    listHeight={320}
-                    options={PDF_FONT_OPTIONS.map((o) => ({
-                      value: o.family,
-                      label: o.family,
-                    }))}
-                    // Render each option in its own font so the list is a live
-                    // type specimen — mount-load the font as it renders.
-                    optionRender={(opt) => {
-                      loadFontForPreview(String(opt.value));
-                      return (
-                        <span style={{ fontFamily: getFontOption(String(opt.value)).css, fontSize: 15 }}>
-                          {opt.label}
-                        </span>
-                      );
-                    }}
-                    style={{ width: "100%" }}
-                  />
-                </div>
-              )}
+              <div className="fb-field">
+                <label className="fb-field-label">Font</label>
+                <Select
+                  showSearch
+                  value={selected.fontFamily ?? "Inter"}
+                  onChange={(v) => {
+                    const opt = getFontOption(v);
+                    loadFontForPreview(v);
+                    updateElement(selected.id, { fontFamily: v, fontWeight: opt.weight });
+                  }}
+                  optionFilterProp="label"
+                  listHeight={320}
+                  options={PDF_FONT_OPTIONS.map((o) => ({
+                    value: o.family,
+                    label: o.family,
+                  }))}
+                  // Render each option in its own font so the list is a live
+                  // type specimen — mount-load the font as it renders.
+                  optionRender={(opt) => {
+                    loadFontForPreview(String(opt.value));
+                    return (
+                      <span style={{ fontFamily: getFontOption(String(opt.value)).css, fontSize: 15 }}>
+                        {opt.label}
+                      </span>
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                />
+              </div>
 
               <div className="fb-sf-textopts">
                 <div>
                   <label className="fb-field-label">Size</label>
                   <Slider
-                    min={8}
-                    max={72}
+                    min={TEXT_SIZE_MIN}
+                    max={TEXT_SIZE_MAX}
                     value={selected.fontSize ?? 16}
-                    onChange={(v) => updateElement(selected.id, { fontSize: v, height: Math.round(v / 0.8) })}
+                    onChange={(v) => updateElement(selected.id, { fontSize: v, height: textBoxHeight(v) })}
                   />
                 </div>
                 <div className="fb-sf-color">
@@ -486,48 +550,78 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
                 </div>
               </div>
 
-              {selected.kind === "text" && (
-                <div className="fb-field" style={{ marginTop: 8 }}>
-                  <label className="fb-field-label">Background</label>
-                  <div className="fb-sf-bgrow">
-                    <Segmented
-                      size="small"
-                      value={selected.bg ? "fill" : "none"}
-                      onChange={(v) =>
-                        updateElement(selected.id, {
-                          bg: v === "fill" ? (selected.bg ?? { r: 1, g: 1, b: 1 }) : undefined,
-                        })
-                      }
-                      options={[
-                        { label: "None", value: "none" },
-                        { label: "Fill", value: "fill" },
-                      ]}
+              <div className="fb-field" style={{ marginTop: 8 }}>
+                <label className="fb-field-label">Background</label>
+                <div className="fb-sf-bgrow">
+                  <Segmented
+                    size="small"
+                    value={selected.bg ? "fill" : "none"}
+                    onChange={(v) =>
+                      updateElement(selected.id, {
+                        bg: v === "fill" ? (selected.bg ?? { r: 1, g: 1, b: 1 }) : undefined,
+                      })
+                    }
+                    options={[
+                      { label: "None", value: "none" },
+                      { label: "Fill", value: "fill" },
+                    ]}
+                  />
+                  {selected.bg && (
+                    <ColorPicker
+                      value={`rgb(${selected.bg.r * 255},${selected.bg.g * 255},${selected.bg.b * 255})`}
+                      onChange={(c) => {
+                        const { r, g, b } = c.toRgb();
+                        updateElement(selected.id, { bg: { r: r / 255, g: g / 255, b: b / 255 } });
+                      }}
                     />
-                    {selected.bg && (
-                      <ColorPicker
-                        value={`rgb(${selected.bg.r * 255},${selected.bg.g * 255},${selected.bg.b * 255})`}
-                        onChange={(c) => {
-                          const { r, g, b } = c.toRgb();
-                          updateElement(selected.id, { bg: { r: r / 255, g: g / 255, b: b / 255 } });
-                        }}
-                      />
-                    )}
-                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-                      Fill covers what's underneath
-                    </Typography.Text>
-                  </div>
+                  )}
+                  <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                    Fill covers what's underneath
+                  </Typography.Text>
                 </div>
-              )}
+              </div>
 
-              <Button
-                danger
-                size="small"
-                icon={<ClearOutlined />}
-                onClick={() => removeElement(selected.id)}
-                style={{ marginTop: 10 }}
-              >
-                Remove this
-              </Button>
+              <ElementActions id={selected.id} />
+            </>
+          )}
+
+          {selected && (selected.kind === "checkmark" || selected.kind === "circle") && (
+            <>
+              <Divider style={{ margin: "16px 0" }} />
+              <div className="fb-sf-textopts">
+                <div>
+                  {selected.kind === "checkmark" ? (
+                    <>
+                      <label className="fb-field-label">Size</label>
+                      <Slider
+                        min={MARK_SIZE_MIN}
+                        max={MARK_SIZE_MAX}
+                        value={Math.round(selected.height)}
+                        onChange={(v) => updateElement(selected.id, { width: v, height: v })}
+                      />
+                    </>
+                  ) : (
+                    <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                      Drag the corner to fit the circle around a word.
+                    </Typography.Text>
+                  )}
+                </div>
+                <div className="fb-sf-color">
+                  <label className="fb-field-label">Color</label>
+                  <ColorPicker
+                    value={
+                      selected.color
+                        ? `rgb(${selected.color.r * 255},${selected.color.g * 255},${selected.color.b * 255})`
+                        : "#000000"
+                    }
+                    onChange={(c) => {
+                      const { r, g, b } = c.toRgb();
+                      updateElement(selected.id, { color: { r: r / 255, g: g / 255, b: b / 255 } });
+                    }}
+                  />
+                </div>
+              </div>
+              <ElementActions id={selected.id} />
             </>
           )}
 
@@ -538,15 +632,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
                 Drag to position, grab the corner to resize.
               </Typography.Text>
               <div>
-                <Button
-                  danger
-                  size="small"
-                  icon={<ClearOutlined />}
-                  onClick={() => removeElement(selected.id)}
-                  style={{ marginTop: 10 }}
-                >
-                  Remove this
-                </Button>
+                <ElementActions id={selected.id} />
               </div>
             </>
           )}
