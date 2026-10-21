@@ -1,8 +1,8 @@
 /**
- * "Load an Opsette kit" quick-fill.
+ * "Load a brand kit" quick-fill.
  *
- * Brand Board (and the other Opsette tools) can export a single
- * `.opsette-kit.json` "project file" that carries every generated asset inline
+ * Brand Board saves a single `.brand-kit.json` (older saves: `.opsette-kit.json`;
+ * same contents) "project file" that carries every generated asset inline
  * as a data URL — the logo, the QR code, the digital card, the email-signature
  * HTML, and a set of social assets (banners, icons, favicon). This module
  * decodes that one file into a list of real `File` objects with sensible names
@@ -16,7 +16,7 @@
  *
  * Robustness rule: this must NEVER throw on junk. A wrong/corrupt file returns
  * an empty result with a friendly reason, so the caller can show a gentle
- * "that's not an Opsette kit file" message instead of crashing.
+ * "that's not a brand kit file" message instead of crashing.
  *
  * Self-inclusion: Brand Board now bakes its OWN designed pages into the blob too
  * — each page as a numbered PNG (pageRenders) plus the whole board as one
@@ -212,7 +212,7 @@ export interface KitParseResult {
 const EMPTY_FAIL = (error: string): KitParseResult => ({ files: [], kitLabel: null, error });
 
 /**
- * Parse the raw text of an `.opsette-kit.json` file into prepared bundle files.
+ * Parse the raw text of a `.brand-kit.json` file into prepared bundle files.
  * Tolerant of both the enveloped shape ({ type, v, board:{...} }) and a bare
  * board object. Never throws.
  */
@@ -221,10 +221,10 @@ export async function parseOpsetteKit(rawText: string): Promise<KitParseResult> 
   try {
     parsed = JSON.parse(rawText);
   } catch {
-    return EMPTY_FAIL("That file isn't valid JSON, so it can't be an Opsette kit.");
+    return EMPTY_FAIL("That file isn't valid JSON, so it can't be a brand kit.");
   }
   if (!parsed || typeof parsed !== "object") {
-    return EMPTY_FAIL("That doesn't look like an Opsette kit file.");
+    return EMPTY_FAIL("That doesn't look like a brand kit file.");
   }
 
   const root = parsed as Record<string, unknown>;

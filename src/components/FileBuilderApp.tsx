@@ -13,7 +13,7 @@ import type { ModeId } from "@/lib/modes";
 /**
  * FileBuilderApp — the top-level. Owns which mode is active and hosts the
  * theme, AntD App context, and the Package mode's state provider. The Smallpdf
- * workspace (rail / canvas / panel) is rendered by AppShell inside the Opsette
+ * workspace (rail / canvas / panel) is rendered by AppShell inside the
  * chrome Shell.
  */
 function FileBuilderInner() {

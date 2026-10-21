@@ -1,6 +1,6 @@
 /**
  * File Builder shell — the Smallpdf-shaped three-zone workspace that sits below
- * the shared Opsette header.
+ * the app header.
  *
  *   [ rail | full-bleed canvas | control panel ]
  *
@@ -17,7 +17,7 @@
   --fb-canvas-bg: #eef1f6;
   --fb-panel-bg: #ffffff;
   --fb-panel-border: #e6e9ee;
-  /* Opsette brand green (matches the header accent + primary buttons) so the
+  /* The app's brand green (matches the header accent + primary buttons) so the
      rail reads as ours, not borrowed Smallpdf chrome. */
   --fb-rail-bg: #2f4f46;
   --fb-rail-fg: #b9cbc4;

@@ -22,7 +22,7 @@ export function loadFontForPreview(family: string): void {
 }
 
 /**
- * pdf-fonts.ts — bridges the shared Opsette font library to the PDF exporter.
+ * pdf-fonts.ts — bridges the shared font library to the PDF exporter.
  *
  * Two jobs:
  *  1. Give the Sign & Fill picker the FULL list of library fonts (every distinct

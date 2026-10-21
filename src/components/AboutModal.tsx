@@ -1,5 +1,5 @@
 import { Modal, Typography } from "antd";
-import { OpsetteFooterLogo } from "@/components/opsette-share";
+import DeeBuiltCredit from "@/components/DeeBuiltCredit";
 
 const { Paragraph, Title } = Typography;
 
@@ -11,7 +11,7 @@ interface AboutModalProps {
 export default function AboutModal({ open, onClose }: AboutModalProps) {
   return (
     <Modal open={open} onCancel={onClose} footer={null} title="About File Builder">
-      <Title level={5} style={{ marginTop: 0 }}>A file workshop from Opsette</Title>
+      <Title level={5} style={{ marginTop: 0 }}>A free tool from DeeBuilt</Title>
       <Paragraph>
         File Builder bundles any pile of files into one clean, labeled ZIP.
         Drop them in, rename them, group them into folders, and download a tidy
@@ -26,7 +26,7 @@ export default function AboutModal({ open, onClose }: AboutModalProps) {
         Everything runs in your browser. Your files never leave your machine and
         there's no account to sign up for, which is the whole point.
       </Paragraph>
-      <OpsetteFooterLogo />
+      <DeeBuiltCredit />
     </Modal>
   );
 }

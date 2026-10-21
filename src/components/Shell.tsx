@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Layout, Space, Switch, Typography } from "antd";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
-import { OpsetteHeader } from "@/components/opsette-header";
+import AppHeader from "@/components/AppHeader";
+import DeeBuiltCredit from "@/components/DeeBuiltCredit";
 import { useThemeMode } from "@/lib/theme";
 import { haptic } from "@/lib/haptics";
 import AboutModal from "@/components/AboutModal";
@@ -11,7 +12,7 @@ const { Content } = Layout;
 const { Link, Text } = Typography;
 
 /**
- * Shell — the Opsette chrome wrapper for File Builder: the shared unified header
+ * Shell — the chrome wrapper for File Builder: the app header
  * on top (chrome only — the dark toggle is the only control it carries) and the
  * full-bleed workspace as children.
  *
@@ -75,17 +76,7 @@ export default function Shell({
           Privacy
         </Link>
         <Text type="secondary">·</Text>
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          By{" "}
-          <Link
-            href="https://opsette.io"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: 12 }}
-          >
-            Opsette
-          </Link>
-        </Text>
+        <DeeBuiltCredit />
       </Space>
     </div>
   );
@@ -102,7 +93,7 @@ export default function Shell({
         background: isDark ? "#0b0f17" : "#eef1f6",
       }}
     >
-      <OpsetteHeader theme={isDark ? "dark" : "light"} rightExtra={headerExtras} />
+      <AppHeader actions={headerExtras} />
 
       {/* Full-bleed workspace: no padding, no max-width. flex:1 + min-height:0
           lets it fill the space below the header and scroll inside. The footer

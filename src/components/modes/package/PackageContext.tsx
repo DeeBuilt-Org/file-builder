@@ -18,7 +18,7 @@ import { idbGet, idbSet } from "@/lib/idb";
  * editable row (rename, optionally put in a folder, remove), you name the ZIP,
  * and download. Nothing is scoped to a specific kit. Ruthnie's Fiverr assembly
  * line is just "drop my exported assets and name them" — same tool, no special
- * mode. The Opsette-kit quick-fill is a future accelerant layered on top, never
+ * mode. The brand-kit quick-fill is a future accelerant layered on top, never
  * the default framing.
  *
  * The mode's Canvas (drop zone + file list) and Panel (zip name + download) are

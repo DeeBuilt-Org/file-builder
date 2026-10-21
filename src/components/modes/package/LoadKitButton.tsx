@@ -5,8 +5,9 @@ import { usePackage } from "./PackageContext";
 import { parseOpsetteKit } from "./opsetteKit";
 
 /**
- * "Load an Opsette kit" — the payoff of the Opsette interop system. Pick a
- * single `.opsette-kit.json` exported from Brand Board and it pre-fills the
+ * "Load a brand kit" — the payoff of the kit interop system. Pick a single
+ * `.brand-kit.json` (or older `.opsette-kit.json`) saved from Brand Board and it
+ * pre-fills the
  * bundler's file list with every asset it carries (logo, QR, digital card,
  * signature HTML, social banners/icons), each already named and foldered.
  *
@@ -68,7 +69,7 @@ export function LoadKitButton({
           inputRef.current?.click();
         }}
       >
-        Load an Opsette kit
+        Load a brand kit
       </Button>
     </>
   );

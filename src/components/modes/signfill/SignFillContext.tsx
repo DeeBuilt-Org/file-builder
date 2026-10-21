@@ -53,7 +53,7 @@ export interface OverlayElement {
   fontSize?: number;
   color?: { r: number; g: number; b: number };
   /**
-   * The chosen font FAMILY from the shared Opsette library (e.g. "Merriweather",
+   * The chosen font FAMILY from the shared font library (e.g. "Merriweather",
    * "Inter"). Rendered on screen via the library's Google-Fonts loader and
    * embedded into the exported PDF from its vendored bytes. Undefined = the
    * default (Helvetica-equivalent) base font.

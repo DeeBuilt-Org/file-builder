@@ -53,7 +53,7 @@ export function PackageCanvas({ isDark }: ModeSurfaceProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   // Empty state: the big inviting drop zone (the hero). Any files, any number.
-  // The "Load an Opsette kit" affordance lives BELOW the drop zone as a sibling,
+  // The "Load a brand kit" affordance lives BELOW the drop zone as a sibling,
   // NOT inside it — the drop zone's whole surface is one big click target that
   // opens its own file picker, so nesting a button in it made the two pickers
   // fight (and a picked .json got added as a raw file instead of being parsed).
@@ -72,7 +72,7 @@ export function PackageCanvas({ isDark }: ModeSurfaceProps) {
           <span className="fb-dropzone-kit-or">or</span>
           <LoadKitButton />
           <span className="fb-dropzone-kit-hint">
-            Fill the list from an Opsette <code>.opsette-kit.json</code> — logo, QR, card,
+            Fill the list from a Brand Board <code>.brand-kit.json</code> — logo, QR, card,
             signature, and social assets, all at once.
           </span>
         </div>

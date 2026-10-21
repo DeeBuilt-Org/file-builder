@@ -192,7 +192,7 @@
   flex: 1 1 auto;
 }
 
-/* ---- "Load an Opsette kit" — a sibling BELOW the drop zone, not inside it -- */
+/* ---- "Load a brand kit" — a sibling BELOW the drop zone, not inside it -- */
 .fb-dropzone-kit {
   display: flex;
   flex-direction: column;
