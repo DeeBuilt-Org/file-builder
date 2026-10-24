@@ -14,14 +14,14 @@
 }
 
 .fb-img-count {
-  font-weight: 650;
-  font-size: 15px;
+  font-weight: var(--ops-fw-bold);
+  font-size: var(--ops-fs-body);
   color: var(--fb-text);
   margin-right: 10px;
 }
 
 .fb-img-sub {
-  font-size: 13px;
+  font-size: var(--ops-fs-caption);
 }
 
 .fb-img-grid {
@@ -54,7 +54,7 @@
   cursor: pointer;
   display: grid;
   place-items: center;
-  font-size: 14px;
+  font-size: var(--ops-icon-sm);
   opacity: 0;
   transition: opacity 0.15s ease, background 0.15s ease;
 }
@@ -104,8 +104,8 @@
 }
 
 .fb-img-name {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--ops-fs-caption);
+  font-weight: var(--ops-fw-bold);
   color: var(--fb-text);
   white-space: nowrap;
   overflow: hidden;
@@ -113,7 +113,7 @@
 }
 
 .fb-img-dims {
-  font-size: 12px;
+  font-size: var(--ops-fs-fine);
   color: var(--fb-text-dim);
 }
 
@@ -135,20 +135,20 @@
 }
 
 .fb-img-estimate-before {
-  font-size: 13px;
+  font-size: var(--ops-fs-caption);
   color: var(--fb-text-dim);
 }
 
 .fb-img-estimate-after {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: var(--ops-fs-stat);
+  font-weight: var(--ops-fw-bold);
   color: var(--fb-text);
   line-height: 1.1;
 }
 
 .fb-img-estimate-delta {
-  font-size: 13px;
-  font-weight: 650;
+  font-size: var(--ops-fs-caption);
+  font-weight: var(--ops-fw-bold);
 }
 
 .fb-img-estimate-delta[data-dir="down"] {
@@ -190,8 +190,8 @@
 
 .fb-size-chip-label {
   display: block;
-  font-size: 11px;
-  font-weight: 650;
+  font-size: var(--ops-fs-micro);
+  font-weight: var(--ops-fw-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--fb-text-dim);
@@ -206,7 +206,7 @@
 
 .fb-size-chip {
   font: inherit;
-  font-size: 12px;
+  font-size: var(--ops-fs-fine);
   font-variant-numeric: tabular-nums;
   line-height: 1;
   padding: 5px 8px;
@@ -227,7 +227,7 @@
   background: #2980b9;
   border-color: #2980b9;
   color: #fff;
-  font-weight: 650;
+  font-weight: var(--ops-fw-bold);
 }
 
 /* ---- exact-size fill preview (drag to reframe a crop) ---- */
@@ -298,7 +298,7 @@
 }
 
 .fb-exact-caption {
-  font-size: 12px;
+  font-size: var(--ops-fs-fine);
   color: var(--fb-text-dim);
   text-align: center;
 }

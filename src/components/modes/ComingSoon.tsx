@@ -25,7 +25,8 @@ export function ComingSoonCanvas({ isDark }: ModeSurfaceProps) {
       }}
     >
       <ClockCircleOutlined
-        style={{ fontSize: 40, color: isDark ? "#5a6b66" : "#b7c2be" }}
+        className="fb-icon-xl"
+        style={{ color: isDark ? "#5a6b66" : "#b7c2be" }}
       />
       <Title level={4} style={{ margin: 0, color: isDark ? "#e6e6e6" : undefined }}>
         This tool is on the way
@@ -42,7 +43,7 @@ export function ComingSoonCanvas({ isDark }: ModeSurfaceProps) {
 export function ComingSoonPanel({ isDark }: ModeSurfaceProps) {
   return (
     <div style={{ padding: "4px 2px" }}>
-      <Text type="secondary" style={{ fontSize: 13, color: isDark ? "#9aa7a2" : undefined }}>
+      <Text type="secondary" className="fb-text-caption" style={{ color: isDark ? "#9aa7a2" : undefined }}>
         Options for this tool will appear here once it's live.
       </Text>
     </div>

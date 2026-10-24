@@ -462,7 +462,7 @@ export function ResizePanel({ isDark }: ModeSurfaceProps) {
                   </span>
                 </div>
                 {items.length > 1 && (
-                  <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: "block" }}>
+                  <Text type="secondary" className="fb-text-fine" style={{ marginTop: 8, display: "block" }}>
                     Preview is for the first image; each is scaled to fit the same target.
                   </Text>
                 )}
@@ -505,7 +505,7 @@ export function ResizePanel({ isDark }: ModeSurfaceProps) {
                   ? items.length > 1 ? "Resize & save ZIP…" : "Resize & save…"
                   : items.length > 1 ? "Resize & download ZIP" : "Resize & download"}
             </Button>
-            <Text type="secondary" style={{ fontSize: 12, textAlign: "center", display: "block" }}>
+            <Text type="secondary" className="fb-text-fine" style={{ textAlign: "center", display: "block" }}>
               Done in your browser — nothing is uploaded.
             </Text>
           </Space>

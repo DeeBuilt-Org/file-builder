@@ -187,7 +187,7 @@ export function OrganizePanel({ isDark }: ModeSurfaceProps) {
             >
               {allSelected ? "Deselect all" : "Select all"}
             </Button>
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            <Typography.Text type="secondary" className="fb-text-fine">
               {selCount} selected
             </Typography.Text>
           </div>
@@ -247,7 +247,8 @@ export function OrganizePanel({ isDark }: ModeSurfaceProps) {
             </Button>
             <Typography.Text
               type="secondary"
-              style={{ fontSize: 12, textAlign: "center", display: "block" }}
+              className="fb-text-fine"
+              style={{ textAlign: "center", display: "block" }}
             >
               Built in your browser — nothing is uploaded.
             </Typography.Text>

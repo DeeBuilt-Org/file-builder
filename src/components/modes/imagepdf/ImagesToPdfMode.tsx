@@ -257,7 +257,7 @@ export function ImagesToPdfPanel({ isDark }: ModeSurfaceProps) {
             >
               {busy ? "Building PDF…" : "Build & download PDF"}
             </Button>
-            <Text type="secondary" style={{ fontSize: 12, textAlign: "center", display: "block" }}>
+            <Text type="secondary" className="fb-text-fine" style={{ textAlign: "center", display: "block" }}>
               Built in your browser — nothing is uploaded.
             </Text>
           </Space>

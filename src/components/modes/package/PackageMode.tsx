@@ -235,7 +235,7 @@ export function PackagePanel({ isDark }: ModeSurfaceProps) {
 
           {folders.length > 0 && (
             <div className="fb-folder-list">
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text type="secondary" className="fb-text-fine">
                 Folders in this ZIP
               </Text>
               <div className="fb-folder-chips">
@@ -260,7 +260,7 @@ export function PackagePanel({ isDark }: ModeSurfaceProps) {
             >
               {building ? "Building ZIP…" : "Download ZIP"}
             </Button>
-            <Text type="secondary" style={{ fontSize: 12, textAlign: "center", display: "block" }}>
+            <Text type="secondary" className="fb-text-fine" style={{ textAlign: "center", display: "block" }}>
               {building
                 ? "Packing your files — this stays in your browser."
                 : "Built in your browser — nothing is uploaded."}

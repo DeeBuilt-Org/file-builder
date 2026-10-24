@@ -143,7 +143,7 @@ export function ConvertPanel({ isDark }: ModeSurfaceProps) {
             >
               {busy ? "Converting…" : items.length > 1 ? `Convert & download ZIP` : "Convert & download"}
             </Button>
-            <Text type="secondary" style={{ fontSize: 12, textAlign: "center", display: "block" }}>
+            <Text type="secondary" className="fb-text-fine" style={{ textAlign: "center", display: "block" }}>
               Done in your browser — nothing is uploaded.
             </Text>
           </Space>

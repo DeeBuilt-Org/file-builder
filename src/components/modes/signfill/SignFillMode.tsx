@@ -431,7 +431,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
           >
             {fixMode ? "Click text on the page…" : "Fix existing text"}
           </Button>
-          <Typography.Text type="secondary" style={{ fontSize: 11, display: "block", marginBottom: 14 }}>
+          <Typography.Text type="secondary" className="fb-text-micro" style={{ display: "block", marginBottom: 14 }}>
             Click a line to cover &amp; replace it with a matched font.
           </Typography.Text>
 
@@ -515,7 +515,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
                   optionRender={(opt) => {
                     loadFontForPreview(String(opt.value));
                     return (
-                      <span style={{ fontFamily: getFontOption(String(opt.value)).css, fontSize: 15 }}>
+                      <span className="fb-text-body" style={{ fontFamily: getFontOption(String(opt.value)).css }}>
                         {opt.label}
                       </span>
                     );
@@ -575,7 +575,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
                       }}
                     />
                   )}
-                  <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                  <Typography.Text type="secondary" className="fb-text-micro">
                     Fill covers what's underneath
                   </Typography.Text>
                 </div>
@@ -601,7 +601,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
                       />
                     </>
                   ) : (
-                    <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                    <Typography.Text type="secondary" className="fb-text-caption">
                       Drag the corner to fit the circle around a word.
                     </Typography.Text>
                   )}
@@ -628,7 +628,7 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
           {selected && selected.kind === "signature" && (
             <>
               <Divider style={{ margin: "16px 0" }} />
-              <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+              <Typography.Text type="secondary" className="fb-text-caption">
                 Drag to position, grab the corner to resize.
               </Typography.Text>
               <div>
@@ -666,7 +666,8 @@ export function SignFillPanel({ isDark }: ModeSurfaceProps) {
             </Button>
             <Typography.Text
               type="secondary"
-              style={{ fontSize: 12, textAlign: "center", display: "block" }}
+              className="fb-text-fine"
+              style={{ textAlign: "center", display: "block" }}
             >
               Edited in your browser — your PDF is never uploaded.
             </Typography.Text>

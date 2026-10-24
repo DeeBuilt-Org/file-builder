@@ -20,8 +20,8 @@
   border-radius: 7px;
   background: #d35400;
   color: #fff;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--ops-fs-fine);
+  font-weight: var(--ops-fw-bold);
   display: grid;
   place-items: center;
 }

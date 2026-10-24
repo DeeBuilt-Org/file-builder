@@ -1,6 +1,5 @@
 :root {
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--ops-font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -20,4 +19,34 @@ body,
 body {
   background-color: #fafafa;
   color: #1a1a1a;
+}
+
+/**
+ * Type utilities for the app chrome. Components take one of these instead of
+ * an inline fontSize, so every size comes from tokens.css.
+ *
+ * Each is scoped under :root on purpose: AntD writes its own font-size onto
+ * .ant-typography at the same single-class specificity, and its styles are
+ * injected after this file, so a bare class would lose. :root lifts these one
+ * step without !important.
+ */
+:root .fb-text-micro {
+  font-size: var(--ops-fs-micro);
+}
+
+:root .fb-text-fine {
+  font-size: var(--ops-fs-fine);
+}
+
+:root .fb-text-caption {
+  font-size: var(--ops-fs-caption);
+}
+
+:root .fb-text-body {
+  font-size: var(--ops-fs-body);
+}
+
+/* The big glyph on an empty "coming soon" canvas. */
+:root .fb-icon-xl {
+  font-size: var(--ops-icon-xl);
 }

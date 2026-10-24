@@ -209,12 +209,12 @@ export function CompressPanel({ isDark }: ModeSurfaceProps) {
               />
             </div>
             {items.length > 1 && (
-              <Text type="secondary" style={{ fontSize: 12, marginTop: 10, display: "block" }}>
+              <Text type="secondary" className="fb-text-fine" style={{ marginTop: 10, display: "block" }}>
                 Estimate is for the first image; all {items.length} are compressed the same way.
               </Text>
             )}
             {estimate && delta <= 2 && (
-              <Text type="secondary" style={{ fontSize: 12, marginTop: 10, display: "block" }}>
+              <Text type="secondary" className="fb-text-fine" style={{ marginTop: 10, display: "block" }}>
                 This image is already well-compressed — there's little to save here.
               </Text>
             )}
@@ -232,7 +232,7 @@ export function CompressPanel({ isDark }: ModeSurfaceProps) {
             >
               {busy ? "Compressing…" : items.length > 1 ? "Compress & download ZIP" : "Compress & download"}
             </Button>
-            <Text type="secondary" style={{ fontSize: 12, textAlign: "center", display: "block" }}>
+            <Text type="secondary" className="fb-text-fine" style={{ textAlign: "center", display: "block" }}>
               Done in your browser — nothing is uploaded.
             </Text>
           </Space>

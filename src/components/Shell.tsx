@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { Layout, Space, Switch, Typography } from "antd";
+import { Button, Layout, Space, Tooltip, Typography } from "antd";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
-import AppHeader from "@/components/AppHeader";
+import AppHeader, { PackageMark } from "@/components/AppHeader";
 import DeeBuiltCredit from "@/components/DeeBuiltCredit";
 import { useThemeMode } from "@/lib/theme";
 import { haptic } from "@/lib/haptics";
@@ -13,7 +13,7 @@ const { Link, Text } = Typography;
 
 /**
  * Shell — the chrome wrapper for File Builder: the app header
- * on top (chrome only — the dark toggle is the only control it carries) and the
+ * on top (chrome only — the theme toggle is the only control it carries) and the
  * full-bleed workspace as children.
  *
  * The family footer is NOT rendered as a full-width band here — it's handed to
@@ -33,48 +33,26 @@ export default function Shell({
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
   const headerExtras = (
-    <>
-      <SunOutlined
-        style={{
-          opacity: isDark ? 0.4 : 1,
-          fontSize: 13,
-          color: isDark ? "#94A3B8" : "#64748B",
-        }}
-      />
-      <Switch
-        checked={isDark}
-        onChange={() => {
+    <Tooltip title={isDark ? "Light mode" : "Dark mode"}>
+      <Button
+        type="text"
+        aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+        icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+        onClick={() => {
           haptic("tap");
           toggle();
         }}
-        size="small"
+        className="app-header__btn"
       />
-      <MoonOutlined
-        style={{
-          opacity: isDark ? 1 : 0.4,
-          fontSize: 13,
-          color: isDark ? "#E4C49A" : "#94A3B8",
-        }}
-      />
-    </>
+    </Tooltip>
   );
 
   const footer = (
-    <div
-      style={{
-        textAlign: "center",
-        padding: "12px 24px 14px",
-        fontSize: 12,
-      }}
-    >
-      <Space size={8} wrap style={{ justifyContent: "center" }}>
-        <Link onClick={() => setAboutOpen(true)} style={{ fontSize: 12 }}>
-          About
-        </Link>
+    <div className="fb-credit">
+      <Space size={8} wrap className="fb-credit__links">
+        <Link onClick={() => setAboutOpen(true)}>About</Link>
         <Text type="secondary">·</Text>
-        <Link onClick={() => setPrivacyOpen(true)} style={{ fontSize: 12 }}>
-          Privacy
-        </Link>
+        <Link onClick={() => setPrivacyOpen(true)}>Privacy</Link>
         <Text type="secondary">·</Text>
         <DeeBuiltCredit />
       </Space>
@@ -93,7 +71,7 @@ export default function Shell({
         background: isDark ? "#0b0f17" : "#eef1f6",
       }}
     >
-      <AppHeader actions={headerExtras} />
+      <AppHeader mark={<PackageMark />} name="File Builder" actions={headerExtras} />
 
       {/* Full-bleed workspace: no padding, no max-width. flex:1 + min-height:0
           lets it fill the space below the header and scroll inside. The footer

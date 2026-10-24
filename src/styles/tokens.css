@@ -1,9 +1,14 @@
 /**
- * Global design tokens for StartUp Planner.
+ * Global design tokens for File Builder.
  *
  * One place to tune sizing for the whole app. Components reference these
  * variables instead of hardcoding pixels inline, so the page scales as one
- * coherent system rather than a grab-bag of magic numbers.
+ * coherent system rather than a grab-bag of magic numbers. No component
+ * should name a raw font size, weight or family — if one is needed and isn't
+ * here, add it here first.
+ *
+ * These style the app's chrome only. Files the user exports (PDF text in Sign
+ * & Fill, built PDFs, images) carry their own fonts and never read them.
  *
  * Sizes use clamp(MIN, PREFERRED, MAX) so they grow smoothly between phone
  * and desktop — no janky jumps at a breakpoint. The middle vw-based term is
@@ -38,13 +43,80 @@
   --ops-fs-body: clamp(15px, 4vw, 16px);     /* body, table cells */
   --ops-fs-label: clamp(15px, 4vw, 16px);    /* form field labels */
   --ops-fs-sub: clamp(16px, 4.4vw, 18px);    /* intro copy / section sub */
-  --ops-fs-total: clamp(30px, 9vw, 36px);    /* the hero Year-1 number */
+  /* Workspace chrome sizes. The rail is a narrow icon-over-label column, so
+     its labels sit below the reading scale on purpose. */
+  --ops-fs-tag: 8px;                         /* rail "PDF" divider, "soon" tag */
+  --ops-fs-badge: 10px;                      /* file-type badges on rows/cards */
+  --ops-fs-micro: 11px;                      /* rail labels, chips, hints */
+  --ops-fs-panel-title: 17px;                /* the options panel's heading */
+  --ops-fs-stat: 22px;                       /* a big result number */
+
+  /* Nav labels: smaller than body copy so navigation reads as chrome. */
+  --ops-fs-nav: 14px;
+  /* The header wordmark, set in the display face. */
+  --ops-fs-wordmark: clamp(22px, 5.6vw, 26px);
+
+  /* ---- Type families ----------------------------------------------------- */
+  /* Bodoni Moda carries names and titles; Lato carries everything you read or
+     click. theme.tsx hands --ops-font-ui to AntD so its controls match. */
+  --ops-font-display: "Bodoni Moda", "Didot", Georgia, serif;
+  --ops-font-ui: Lato, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ops-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ---- Font weights ------------------------------------------------------ */
+  /* Lato ships 400 and 700 only, so the UI has exactly two weights. Bodoni
+     Moda is variable; every display title uses the one display weight. No
+     rule anywhere should name a raw weight. */
+  --ops-fw-regular: 400;
+  --ops-fw-bold: 700;
+  --ops-fw-display: 600;
+  --ops-tracking-display: -0.01em;
 
   /* ---- Radius ------------------------------------------------------------ */
   --ops-radius: 8px;
 
   /* ---- Card interior padding (breathing room inside cards) --------------- */
   --ops-card-pad: clamp(16px, 5vw, 24px);
+
+  /* ---- Brand + surfaces -------------------------------------------------- */
+  --ops-green: #2f4f46;
+  --ops-surface: #ffffff;
+  --ops-border: #e6e8e6;
+  --ops-text: #1a1a1a;
+  --ops-text-muted: #5b605c;
+
+  /* ---- Chrome ------------------------------------------------------------ */
+  /* Header height. The workspace below fills the rest of the viewport. */
+  --ops-header-h: 56px;
+  /* The lockup's colored tile, its corner, and the mark inside it. */
+  --ops-header-tile-size: 28px;
+  --ops-header-tile-radius: 7px;
+  --ops-header-mark: 18px;
+  /* Square icon-only buttons in the chrome (theme toggle). */
+  --ops-control-icon: 36px;
+  /* Glyph sizes. Icons render at 1em, so these set them via font-size. */
+  --ops-icon-chrome: 20px;
+  --ops-icon-nav: 18px;
+  --ops-icon-sm: 14px;        /* inline action glyphs (remove) */
+  --ops-icon-md: 16px;        /* lightbox close / prev / next */
+  --ops-icon-lg: 34px;        /* "no preview" placeholder glyph */
+  --ops-icon-xl: 40px;        /* "coming soon" canvas glyph */
+  --ops-icon-rail: 22px;      /* a tool's icon in the rail */
+  --ops-icon-hero: 56px;      /* the drop zone's big glyph */
+  --ops-nav-item-h: 36px;
+  --ops-nav-gap: 10px;
+}
+
+/**
+ * Dark mode. Dual cascade — ThemeProvider sets both the `.dark` class and the
+ * `data-theme` attribute, and tokens honor either one.
+ */
+html.dark,
+html[data-theme="dark"] {
+  --ops-surface: #141716;
+  --ops-border: #2a2e2c;
+  --ops-text: #f2f3f2;
+  --ops-text-muted: #9aa09c;
 }
 
 /**
