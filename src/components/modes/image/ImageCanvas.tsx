@@ -18,7 +18,7 @@ export function ImageCanvas({
   isDark,
   blurb,
   accepts,
-}: ModeSurfaceProps & { blurb: string; accepts: string[] }) {
+}: Pick<ModeSurfaceProps, "isDark"> & { blurb: string; accepts: string[] }) {
   const { items, addFiles, remove, clearAll } = useImageWork();
   const addRef = useRef<HTMLInputElement>(null);
 

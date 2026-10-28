@@ -8,6 +8,9 @@ import { OrganizeProvider } from "@/components/modes/organize/OrganizeContext";
 import { SignFillProvider } from "@/components/modes/signfill/SignFillContext";
 import { ImageWorkProvider } from "@/components/modes/image/ImageWorkContext";
 import { ImagesToPdfProvider } from "@/components/modes/imagepdf/ImagesToPdfContext";
+import { ProtectProvider } from "@/components/modes/security/ProtectContext";
+import { UnlockProvider } from "@/components/modes/security/UnlockContext";
+import { UnlockGateProvider } from "@/components/shell/UnlockGate";
 import type { ModeId } from "@/lib/modes";
 
 /**
@@ -39,17 +42,24 @@ export function FileBuilderApp() {
   return (
     <ThemeProvider>
       <AntApp>
-        <PackageProvider>
-          <ImageWorkProvider>
-            <ImagesToPdfProvider>
-              <OrganizeProvider>
-                <SignFillProvider>
-                  <FileBuilderInner />
-                </SignFillProvider>
-              </OrganizeProvider>
-            </ImagesToPdfProvider>
-          </ImageWorkProvider>
-        </PackageProvider>
+        {/* Above every PDF mode's provider: they call `ensureUnlocked`. */}
+        <UnlockGateProvider>
+          <PackageProvider>
+            <ImageWorkProvider>
+              <ImagesToPdfProvider>
+                <OrganizeProvider>
+                  <SignFillProvider>
+                    <ProtectProvider>
+                      <UnlockProvider>
+                        <FileBuilderInner />
+                      </UnlockProvider>
+                    </ProtectProvider>
+                  </SignFillProvider>
+                </OrganizeProvider>
+              </ImagesToPdfProvider>
+            </ImageWorkProvider>
+          </PackageProvider>
+        </UnlockGateProvider>
       </AntApp>
     </ThemeProvider>
   );

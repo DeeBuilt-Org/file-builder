@@ -83,14 +83,14 @@ export function AppShell({
       <div className="fb-center">
         <section className="fb-canvas">
           <div className="fb-canvas-inner">
-            <Canvas isDark={isDark} />
+            <Canvas isDark={isDark} goToMode={onModeChange} />
           </div>
         </section>
         <div className="fb-footer">{footer}</div>
       </div>
 
       <aside className="fb-panel" aria-label={`${mode.label} options`}>
-        <Panel isDark={isDark} />
+        <Panel isDark={isDark} goToMode={onModeChange} />
       </aside>
     </div>
   );

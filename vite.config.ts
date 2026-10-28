@@ -13,6 +13,19 @@ export default defineConfig(({ command }) => ({
       overlay: false,
     },
   },
+  // MuPDF (Protect / Unlock / unlock prompt) uses top-level await, which the
+  // default browser targets reject. Every browser File Builder supports already
+  // runs ES2022.
+  build: {
+    target: "es2022",
+  },
+  optimizeDeps: {
+    // Pre-bundling moves mupdf.js into .vite/deps but leaves its .wasm behind, so
+    // the `new URL("mupdf-wasm.wasm", import.meta.url)` lookup 404s in dev. Serve
+    // it from node_modules as-is instead.
+    exclude: ["mupdf"],
+    esbuildOptions: { target: "es2022" },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -37,6 +50,16 @@ export default defineConfig(({ command }) => ({
         // never by the app — keep it out of the offline precache (it also
         // exceeds the 2 MiB precache limit and would fail the build).
         globIgnores: ["**/og-image.png"],
+        // MuPDF's ~10 MB .wasm is NOT precached (globPatterns leaves out .wasm):
+        // someone who only resizes images should never download it. It is cached
+        // on first use instead, so Protect / Unlock still work offline after that.
+        runtimeCaching: [
+          {
+            urlPattern: /\.wasm$/,
+            handler: "CacheFirst",
+            options: { cacheName: "fb-wasm", expiration: { maxEntries: 4 } },
+          },
+        ],
       },
     }),
   ],

@@ -24,9 +24,15 @@ import { CHECK_PATH, CIRCLE_STROKE_PT, checkSquare, circleRadii } from "./marks"
 export type PdfBytes = Uint8Array;
 
 /** Load a document from raw bytes. pdf-lib parses lazily; this can throw on a
- *  corrupt/encrypted file, so callers should try/catch and show a friendly note. */
+ *  corrupt file, so callers should try/catch and show a friendly note.
+ *
+ *  pdf-lib cannot decrypt, so encrypted bytes must never reach it: modes pass
+ *  every file through the unlock gate (`UnlockGate.tsx`) first. This used to set
+ *  `ignoreEncryption: true`, which let a protected PDF through and silently
+ *  produced a broken or blank file. Without it, pdf-lib throws instead, so a
+ *  file that somehow skips the gate fails loudly rather than corrupting output. */
 export async function loadPdf(data: ArrayBuffer | Uint8Array): Promise<PDFDocument> {
-  return PDFDocument.load(data, { ignoreEncryption: true });
+  return PDFDocument.load(data);
 }
 
 /** Page count without keeping the document around. */

@@ -10,6 +10,7 @@ import {
 import { uuid } from "@/lib/uuid";
 import { loadPdfDocument, renderPageToDataUrl } from "@/lib/pdfjs";
 import { getPageCount } from "@/lib/pdf-ops";
+import { useUnlockGate } from "@/components/shell/UnlockGate";
 
 /**
  * OrganizeContext — state for the Organize mode: one or more source PDFs and a
@@ -48,7 +49,8 @@ interface OrganizeState {
   /** Whether any source is loaded. */
   hasDoc: boolean;
   /** Add one or more PDF files as sources, appending their pages to the list. */
-  addPdfs: (files: File[]) => Promise<{ added: number; skipped: string[] }>;
+  /** `locked` lists protected PDFs the user cancelled at the password prompt. */
+  addPdfs: (files: File[]) => Promise<{ added: number; skipped: string[]; locked: string[] }>;
   /** Bytes for each docId, for the builder. */
   sources: Record<string, ArrayBuffer>;
   /** A cached thumbnail URL for a page, rendering it on first request. */
@@ -67,6 +69,7 @@ interface OrganizeState {
 const Ctx = createContext<OrganizeState | null>(null);
 
 export function OrganizeProvider({ children }: { children: ReactNode }) {
+  const { ensureUnlocked } = useUnlockGate();
   const [docs, setDocs] = useState<SourceDoc[]>([]);
   const [pages, setPages] = useState<PageEntry[]>([]);
   // pdf.js document handles + rendered thumbnail URLs, cached across renders.
@@ -76,6 +79,7 @@ export function OrganizeProvider({ children }: { children: ReactNode }) {
 
   const addPdfs = useCallback(async (files: File[]) => {
     const skipped: string[] = [];
+    const locked: string[] = [];
     let added = 0;
     for (const file of files) {
       const isPdf =
@@ -85,7 +89,13 @@ export function OrganizeProvider({ children }: { children: ReactNode }) {
         continue;
       }
       try {
-        const bytes = await file.arrayBuffer();
+        // A protected PDF asks for its password here; pdf-lib only ever sees
+        // decrypted bytes.
+        const bytes = await ensureUnlocked(await file.arrayBuffer(), file.name);
+        if (!bytes) {
+          locked.push(file.name);
+          continue;
+        }
         const pageCount = await getPageCount(bytes);
         const docId = uuid();
         setDocs((prev) => [...prev, { id: docId, name: file.name, bytes, pageCount }]);
@@ -104,8 +114,8 @@ export function OrganizeProvider({ children }: { children: ReactNode }) {
         skipped.push(file.name);
       }
     }
-    return { added, skipped };
-  }, []);
+    return { added, skipped, locked };
+  }, [ensureUnlocked]);
 
   const sources = useMemo<Record<string, ArrayBuffer>>(() => {
     const map: Record<string, ArrayBuffer> = {};

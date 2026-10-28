@@ -31,8 +31,13 @@ export function OrganizeCanvas({ isDark }: ModeSurfaceProps) {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   const onFiles = async (files: File[]) => {
-    const { added, skipped } = await addPdfs(files);
+    const { added, skipped, locked } = await addPdfs(files);
     if (added > 0) message.success(`Added ${added} PDF${added === 1 ? "" : "s"}`);
+    if (locked.length) {
+      message.info(
+        `${locked.length} protected PDF${locked.length === 1 ? " was" : "s were"} not added.`,
+      );
+    }
     if (skipped.length) {
       message.warning(
         `Skipped ${skipped.length} file${skipped.length === 1 ? "" : "s"} — Organize only takes PDFs.`,

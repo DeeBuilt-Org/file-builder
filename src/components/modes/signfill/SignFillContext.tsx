@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { uuid } from "@/lib/uuid";
+import { useUnlockGate } from "@/components/shell/UnlockGate";
 import {
   loadPdfDocument,
   renderPageToDataUrl,
@@ -106,7 +107,8 @@ interface SignFillState {
   pages: RenderedPage[];
   loading: boolean;
   hasDoc: boolean;
-  loadPdf: (file: File) => Promise<boolean>;
+  /** "locked" = a protected PDF whose password prompt was cancelled. */
+  loadPdf: (file: File) => Promise<"ok" | "unreadable" | "locked">;
   reset: () => void;
 
   elements: OverlayElement[];
@@ -140,6 +142,7 @@ const Ctx = createContext<SignFillState | null>(null);
 const RENDER_SCALE = 1.5;
 
 export function SignFillProvider({ children }: { children: ReactNode }) {
+  const { ensureUnlocked } = useUnlockGate();
   const [fileName, setFileName] = useState<string | null>(null);
   const [bytes, setBytes] = useState<ArrayBuffer | null>(null);
   const [pages, setPages] = useState<RenderedPage[]>([]);
@@ -155,12 +158,15 @@ export function SignFillProvider({ children }: { children: ReactNode }) {
     urls.current = [];
   };
 
-  const loadPdf = useCallback(async (file: File) => {
+  const loadPdf = useCallback(async (file: File): Promise<"ok" | "unreadable" | "locked"> => {
     const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-    if (!isPdf) return false;
+    if (!isPdf) return "unreadable";
     setLoading(true);
     try {
-      const buf = await file.arrayBuffer();
+      // A protected PDF asks for its password here. pdf.js (render) and pdf-lib
+      // (export) both get the same decrypted bytes.
+      const buf = await ensureUnlocked(await file.arrayBuffer(), file.name);
+      if (!buf) return "locked";
       const doc = await loadPdfDocument(buf);
       revokeAll();
       const rendered: RenderedPage[] = [];
@@ -185,13 +191,13 @@ export function SignFillProvider({ children }: { children: ReactNode }) {
       setElements([]);
       setSelectedId(null);
       setDefaultsState(suggestSizeDefaults(rendered));
-      return true;
+      return "ok";
     } catch {
-      return false;
+      return "unreadable";
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [ensureUnlocked]);
 
   const reset = useCallback(() => {
     revokeAll();

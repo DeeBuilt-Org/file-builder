@@ -2,6 +2,7 @@
   "name": "file-builder",
   "private": true,
   "version": "0.0.0",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,6 +17,7 @@
     "antd": "^5.21.0",
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
+    "mupdf": "^1.28.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.10.38",
     "react": "^18.3.1",

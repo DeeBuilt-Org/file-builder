@@ -7,6 +7,8 @@ import {
   FilePdfOutlined,
   AppstoreOutlined,
   EditOutlined,
+  LockOutlined,
+  UnlockOutlined,
 } from "@ant-design/icons";
 import { PackagePanel, PackageCanvas } from "@/components/modes/package/PackageMode";
 import { OrganizeCanvas, OrganizePanel } from "@/components/modes/organize/OrganizeMode";
@@ -15,6 +17,12 @@ import { CompressCanvas, CompressPanel } from "@/components/modes/image/Compress
 import { ConvertCanvas, ConvertPanel } from "@/components/modes/image/ConvertMode";
 import { ResizeCanvas, ResizePanel } from "@/components/modes/image/ResizeMode";
 import { ImagesToPdfCanvas, ImagesToPdfPanel } from "@/components/modes/imagepdf/ImagesToPdfMode";
+import {
+  ProtectCanvas,
+  ProtectPanel,
+  PROTECT_ACCENT,
+} from "@/components/modes/security/ProtectMode";
+import { UnlockCanvas, UnlockPanel, UNLOCK_ACCENT } from "@/components/modes/security/UnlockMode";
 
 /**
  * The Mode registry — the single source of truth that drives the whole shell.
@@ -33,7 +41,9 @@ export type ModeId =
   | "resize"
   | "images-to-pdf"
   | "organize"
-  | "sign-fill";
+  | "sign-fill"
+  | "protect"
+  | "unlock";
 
 /**
  * Rail groups. The rail is drawn flat, but a small divider is inserted whenever
@@ -47,6 +57,8 @@ export type ModeGroup = "file" | "pdf";
 export interface ModeSurfaceProps {
   /** Live in dark mode — modes that paint their own surfaces need to know. */
   isDark: boolean;
+  /** Switch the active mode, for "Continue in …" hand-offs between modes. */
+  goToMode: (id: ModeId) => void;
 }
 
 export interface ModeDef {
@@ -156,6 +168,30 @@ export const MODES: ModeDef[] = [
     ready: true,
     Canvas: SignFillCanvas,
     Panel: SignFillPanel,
+  },
+  {
+    id: "protect",
+    group: "pdf",
+    label: "Protect",
+    blurb: "Add a password to a PDF. It is encrypted in your browser and never uploaded.",
+    icon: <LockOutlined />,
+    accent: PROTECT_ACCENT,
+    accepts: ["PDF"],
+    ready: true,
+    Canvas: ProtectCanvas,
+    Panel: ProtectPanel,
+  },
+  {
+    id: "unlock",
+    group: "pdf",
+    label: "Unlock",
+    blurb: "Remove a password you know from a PDF.",
+    icon: <UnlockOutlined />,
+    accent: UNLOCK_ACCENT,
+    accepts: ["PDF"],
+    ready: true,
+    Canvas: UnlockCanvas,
+    Panel: UnlockPanel,
   },
 ];
 

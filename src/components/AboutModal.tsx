@@ -20,11 +20,28 @@ export default function AboutModal({ open, onClose }: AboutModalProps) {
       <Paragraph>
         It also edits PDFs. Reorder or rotate pages, delete the ones you don't
         need, or merge several PDFs into one. Add a signature, type text, drop in
-        a date, or cover and replace something that came out wrong.
+        a date, or cover and replace something that came out wrong. Protect a
+        PDF with a password, or remove a password you know.
       </Paragraph>
       <Paragraph>
         Everything runs in your browser. Your files never leave your machine and
         there's no account to sign up for, which is the whole point.
+      </Paragraph>
+      <Paragraph type="secondary" className="fb-text-fine">
+        Password protection uses{" "}
+        <a href="https://mupdf.com" target="_blank" rel="noopener noreferrer">
+          MuPDF
+        </a>{" "}
+        by Artifex Software, licensed under the GNU AGPL v3. File Builder is
+        released under the same license, and its{" "}
+        <a
+          href="https://github.com/DeeBuilt-Org/file-builder"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          source code is on GitHub
+        </a>
+        .
       </Paragraph>
       <DeeBuiltCredit />
     </Modal>

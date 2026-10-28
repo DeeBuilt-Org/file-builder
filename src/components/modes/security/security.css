@@ -1,0 +1,112 @@
+/**
+ * Protect + Unlock modes — one PDF at a time: a file card (first-page preview,
+ * name, size, status), then the password prompt or a hand-off. Reads the same
+ * --fb-* theme variables as the shell so light/dark stays one cascade.
+ */
+
+.fb-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.fb-sec-card {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 20px;
+  background: var(--fb-drop-bg);
+  border: 1px solid var(--fb-panel-border);
+  border-radius: 12px;
+}
+
+.fb-sec-page {
+  flex: 0 0 140px;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--fb-panel-border);
+  background: var(--fb-canvas-bg);
+}
+
+.fb-sec-page img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+
+.fb-sec-page-icon {
+  font-size: 36px;
+  color: var(--fb-text-dim);
+}
+
+.fb-sec-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.fb-sec-name {
+  font-size: var(--ops-fs-body);
+  color: var(--fb-text);
+}
+
+.fb-sec-status {
+  margin-top: 10px;
+}
+
+.fb-sec-prompt {
+  padding: 20px;
+  background: var(--fb-drop-bg);
+  border: 1px solid var(--fb-panel-border);
+  border-radius: 12px;
+}
+
+.fb-sec-another {
+  align-self: flex-start;
+}
+
+.fb-sec-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fb-sec-perms {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Phone: the preview sits above the details instead of beside them, so the file
+   name and the status alert get the full width. */
+@media (max-width: 560px) {
+  .fb-sec-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .fb-sec-page {
+    flex-basis: auto;
+    width: 120px;
+    align-self: center;
+  }
+
+  .fb-sec-prompt {
+    padding: 16px;
+  }
+
+  .fb-sec-another {
+    align-self: stretch;
+  }
+}

@@ -110,8 +110,8 @@ export function SignFillCanvas({ isDark }: ModeSurfaceProps) {
   }, [selectedId, duplicateElement]);
 
   const onFiles = async (files: File[]) => {
-    const ok = await loadPdf(files[0]);
-    if (!ok) message.error("That doesn't look like a PDF I can open.");
+    const result = await loadPdf(files[0]);
+    if (result === "unreadable") message.error("That doesn't look like a PDF I can open.");
   };
 
   if (!hasDoc) {

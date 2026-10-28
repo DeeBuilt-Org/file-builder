@@ -355,6 +355,27 @@
   font-size: var(--ops-fs-caption);
 }
 
+/* ---- Password prompt (Unlock mode inline, unlock gate in a modal) -------- */
+.fb-pw-title.ant-typography {
+  margin: 0 0 6px;
+  font-size: var(--ops-fs-panel-title);
+}
+
+.fb-pw-body.ant-typography {
+  margin-bottom: 14px;
+  overflow-wrap: anywhere;
+}
+
+.fb-pw-error {
+  margin-top: 10px;
+}
+
+.fb-pw-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
 /* ---- Right control panel ------------------------------------------------- */
 .fb-panel {
   flex: 0 0 380px;
